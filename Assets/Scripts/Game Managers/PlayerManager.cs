@@ -19,11 +19,20 @@ namespace Task
         public const string HASH_DEATHS = "Deaths";
         public const string HASH_ASSISTS = "Assists";
 
+        public static PlayerManager localInstance;
+        private void Awake()
+        {
+            if (photonView.IsMine)
+                localInstance = this;
+        }
+
         [SerializeField] private PlayerController _PlayerControllerPrefab;
 
         private GameObject _controllerInstance;
 
         int kills; int deaths; int assists;
+
+        public (int,int,int) KDA => (kills, deaths, assists);
 
         private void Start()
         {
@@ -33,7 +42,7 @@ namespace Task
 
         private void CreateController()
         {
-            Debug.Log("Instantiated Player Controller");
+            //Debug.Log("Instantiated Player Controller");
             Transform spawnpoint = SpawnManager.GetSpawnPoint();
 
             // Instantiate Player Controller

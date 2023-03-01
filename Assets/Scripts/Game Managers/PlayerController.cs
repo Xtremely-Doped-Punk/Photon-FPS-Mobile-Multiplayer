@@ -94,6 +94,8 @@ namespace Task
                 // destroy non-playable player's FPS cams (URP bug - cant destroy)
                 FPS_Camera.enabled = false;
             }
+
+            Cursor.lockState = CursorLockMode.Locked; // make cursor locked by default
         }
 
         #region Updates (per frame)
@@ -110,6 +112,11 @@ namespace Task
             if (transform.position.y < -10f) // Die if you fall out of the world
             {
                 Dead();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                CursorLockSwitch();
             }
         }
 
@@ -280,15 +287,22 @@ namespace Task
         #endregion
 
         #region CursorLock
-        public override void OnEnable()
+        private void CursorLockSwitch()
         {
-            base.OnEnable();
-            Cursor.lockState = CursorLockMode.Locked;
-        }
-        public override void OnDisable()
-        {
-            base.OnDisable();
-            Cursor.lockState = CursorLockMode.Confined;
+            switch (Cursor.lockState)
+            {
+                case CursorLockMode.Locked: 
+                    Cursor.lockState = CursorLockMode.Confined;
+                    break;
+
+                case CursorLockMode.Confined:
+                    Cursor.lockState = CursorLockMode.Locked;
+                    break;
+
+                default:
+                    Cursor.lockState = CursorLockMode.None;
+                    break;
+            }
         }
         #endregion
     }

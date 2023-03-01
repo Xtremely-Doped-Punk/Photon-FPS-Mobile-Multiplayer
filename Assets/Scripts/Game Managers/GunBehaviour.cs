@@ -50,7 +50,7 @@ namespace Task
             if (!photonView.IsMine) return;
             _magUI.gameObject.SetActive(false);
             _reloadUI.gameObject.SetActive(false);
-            Debug.Log(gameObject+"disabled");
+            //Debug.Log(gameObject+"disabled");
         }
 
         private void OnEnable()
@@ -59,7 +59,7 @@ namespace Task
             reloadCountdown = ConfigInfo.ReloadDelay;
             _magUI.gameObject.SetActive(true);
             _reloadUI.gameObject.SetActive(true);
-            Debug.Log(gameObject+"enabled");
+            //Debug.Log(gameObject+"enabled");
         }
 
         private void Update()
@@ -159,7 +159,7 @@ namespace Task
 
             if (colliders.Length != 0)
             {
-                Debug.Log("Hit: " + colliders[0].gameObject.name + ", Count: " + colliders.Length);
+                //Debug.Log("Hit: " + colliders[0].gameObject.name + ", Count: " + colliders.Length);
 
                 MeshRenderer bulletImpact =
                     Instantiate(

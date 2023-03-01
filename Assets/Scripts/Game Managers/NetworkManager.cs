@@ -13,6 +13,7 @@ namespace Task
 {
     public class NetworkManager : MonoBehaviourPunCallbacks // overwriting existing photon callbacks
     {
+        private const string RECENT_PLAYER_SAVE_FILE = "/Resources/LastGameStats.json";
         // singleton
         public static NetworkManager singleton;
         [SerializeField] private GameSettings settings;
@@ -29,7 +30,7 @@ namespace Task
                 Destroy(this.gameObject);
 
             if (settings == null) settings = GameSettings.Instance;
-
+            
             //photonView.ViewID = PhotonNetwork.MAX_VIEW_IDS = 999; // cant be done in script, just in inspector put 999 manually
             /* as this gameobject not intialized using Photon.Instanciate(),
             its view id should be manually assigned so that it doesnt mess up other view id no.s
@@ -100,7 +101,7 @@ namespace Task
 
         #endregion
 
-        #region Lobby Room fns
+        #region Button fns
         public void JoinOrCreateRoom(string roomName)
         {
             if (isConnectedToMaster)
@@ -173,8 +174,47 @@ namespace Task
         {
             if (scene.name.ToLower().Contains("game"))
             {
+                // save player stats on application quit automatically by adding it to event
+                Application.quitting += SavePlayerStats;
+
                 // instanciate game server objects (note prefab path string must be passed as argument)
                 PhotonNetwork.Instantiate(GetAssetResoursePath(PlayerManagerPrefab), Vector3.zero, Quaternion.identity);
+            }
+        }
+        #endregion
+
+        #region Save Stats Json
+        private class PlayerStats_SaveData
+        {
+            public string name;
+            public int kills, deaths, assists;
+        }
+        public void SavePlayerStats()
+        {
+            var kda = PlayerManager.localInstance.KDA;
+            var saveDat = new PlayerStats_SaveData()
+            {
+                name = PhotonNetwork.LocalPlayer.NickName,
+                kills = kda.Item1,
+                deaths = kda.Item2,
+                assists = kda.Item3
+            };
+            var jsonDat = JsonUtility.ToJson(saveDat);
+            File.WriteAllText(Application.dataPath + RECENT_PLAYER_SAVE_FILE, jsonDat);
+            Debug.Log(jsonDat);
+        }
+
+        public (string, (int, int, int)) LoadPlayerStats()
+        {
+            try
+            {
+                var jsonDat = File.ReadAllText(Application.dataPath + RECENT_PLAYER_SAVE_FILE);
+                var savDat =  JsonUtility.FromJson<PlayerStats_SaveData>(jsonDat);
+                return (savDat.name, (savDat.kills, savDat.deaths, savDat.assists));
+            }
+            catch // if file doesnt exits initially
+            {
+                return (null, (-1, -1, -1));
             }
         }
         #endregion

@@ -2,6 +2,7 @@
 using UnityEngine;
 using Photon.Realtime;
 using Photon.Pun;
+using System.IO;
 
 namespace Task
 {
@@ -69,6 +70,13 @@ namespace Task
 			{
 				_canvasGroup.alpha = 0; // hide
 			}
+		}
+
+		// temp btn fn to save last played game stats on game exit
+		public void ExitGame()
+		{
+			NetworkManager.singleton.SavePlayerStats(); // for editor
+			Application.Quit();
 		}
 	}
 }
