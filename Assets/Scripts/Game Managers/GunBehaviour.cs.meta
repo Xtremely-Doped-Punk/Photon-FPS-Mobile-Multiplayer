@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 65f05e420d93a324ea13059dd487ae52
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - <ConfigInfo>k__BackingField: {instanceID: 0}
+  - _modelGameObject: {instanceID: 0}
+  - _BulletImpactPrefab: {fileID: 4610352918857983968, guid: 10f6e1a852ca8ec48b9d93c16da5bc40,
+      type: 3}
+  - _controller: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

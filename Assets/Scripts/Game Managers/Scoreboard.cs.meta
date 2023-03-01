@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 9faaa15df1f04eb479b37ce5e19f8e1e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - _context: {instanceID: 0}
+  - ScoreboardItemPrefab: {fileID: 169678932587876839, guid: 8408ad13ac3ea9f4393cdb345c47253d,
+      type: 3}
+  - _canvasGroup: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
