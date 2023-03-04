@@ -74,14 +74,7 @@ namespace Task
             else
             {
                 photonView.RPC(nameof(RPC_InstanciatePlayerMaterial), RpcTarget.AllBuffered);
-                if (Application.isMobilePlatform)
-                {
-                    AndroidInputOverlay.SetActive(true);
-                    foreach (Image ui in AndroidInputOverlay.GetComponentsInChildren<Image>().Skip(1))
-                    {
-                        ui.gameObject.AddComponent<AndroidUIOverrider>();
-                    }
-                }
+                //AndroidInputOverlay.SetActive(Application.isMobilePlatform);
             }
         }
 

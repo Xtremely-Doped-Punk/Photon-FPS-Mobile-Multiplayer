@@ -80,7 +80,7 @@ namespace Task
         // Work around for button hold technique
         //public bool Shift_BtnHold => actions_Shift.Any(x => x.IsPressed());
         //[SerializeField] InputAction[] actions_Shift = _PlayerInput_.Sprint.actionMap.actions.ToArray(); // initialize on enable
-        
+
         // Another work around for reset after reference
         //[SerializeField] private bool inp_Jump = false;
         //public bool Space_BtnDown { get { var temp = inp_Jump; inp_Jump = false; return temp; } } // if accessed, it resets
@@ -101,21 +101,16 @@ namespace Task
 
             _PlayerInput_.Jump.performed += InpActCB => { Space_BtnDown = InpActCB.action.IsPressed(); };
 
-            _PlayerInput_.Fire.performed += InpActCB => 
+            _PlayerInput_.Fire.performed += InpActCB =>
             { LeftMouse_BtnHold = LeftMouseBtn_BtnDown = InpActCB.action.IsPressed(); };
             _PlayerInput_.Fire.canceled += InpActCB => { LeftMouse_BtnHold = InpActCB.action.IsPressed(); };
 
             _PlayerInput_.Reload.performed += InpActCB => { R_BtnDown = InpActCB.action.IsPressed(); };
 
-            if (Application.isConsolePlatform)
-            {
-                _PlayerInput_.WeaponSwitchNext.performed += InpActCB => { WeaponNext = InpActCB.action.IsPressed(); };
-                _PlayerInput_.WeaponSwitchPrev.performed += InpActCB => { WeaponPrev = InpActCB.action.IsPressed(); };
-            }
-            else
-            {
-                _PlayerInput_.WeaponScroll.performed += InpActCB => Mouse_ScrollWheel = InpActCB.ReadValue<float>();
-            }
+            _PlayerInput_.WeaponSwitchNext.performed += InpActCB => { WeaponNext = InpActCB.action.IsPressed(); };
+            _PlayerInput_.WeaponSwitchPrev.performed += InpActCB => { WeaponPrev = InpActCB.action.IsPressed(); };
+            _PlayerInput_.WeaponScroll.performed += InpActCB => Mouse_ScrollWheel = InpActCB.ReadValue<float>();
+
             _PlayerInput_.ScoreBoard.performed += InpActCB => { Tab_BtnHold = InpActCB.action.IsPressed(); };
             _PlayerInput_.ScoreBoard.canceled += InpActCB => { Tab_BtnHold = InpActCB.action.IsPressed(); };
 
@@ -125,7 +120,7 @@ namespace Task
 
         private void HandleCamera(InputAction.CallbackContext InpActCB)
         {
-           inp_Look = InpActCB.ReadValue<Vector2>();
+            inp_Look = InpActCB.ReadValue<Vector2>();
         }
 
         private void OnDisable()

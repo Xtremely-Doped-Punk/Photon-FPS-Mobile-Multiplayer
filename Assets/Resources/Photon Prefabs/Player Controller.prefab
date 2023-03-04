@@ -395,7 +395,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1358630708202142332
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1471,6 +1471,7 @@ GameObject:
   - component: {fileID: 507197680108410705}
   - component: {fileID: 6947178980521311930}
   - component: {fileID: 6171397946363435334}
+  - component: {fileID: 4515860658042149542}
   m_Layer: 0
   m_Name: Joystick
   m_TagString: Untagged
@@ -1554,23 +1555,35 @@ MonoBehaviour:
   m_Behaviour: 0
   m_UseIsolatedInputActions: 0
   m_PointerDownAction:
-    m_Name: 
+    m_Name: Pointer Down
     m_Type: 0
     m_ExpectedControlType: 
-    m_Id: 
+    m_Id: 1e7dea99-aadc-40b2-a148-4a484f48f942
     m_Processors: 
     m_Interactions: 
     m_SingletonActionBindings: []
     m_Flags: 0
   m_PointerMoveAction:
-    m_Name: 
+    m_Name: Pointer Move
     m_Type: 0
     m_ExpectedControlType: 
-    m_Id: 
+    m_Id: 3fbc33eb-a1df-4873-90be-1e4d29141c84
     m_Processors: 
     m_Interactions: 
     m_SingletonActionBindings: []
     m_Flags: 0
+--- !u!114 &4515860658042149542
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6799170890017707612}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccd405e104b3f7940864a4827a140b36, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &6868062691709852944
 GameObject:
   m_ObjectHideFlags: 0
