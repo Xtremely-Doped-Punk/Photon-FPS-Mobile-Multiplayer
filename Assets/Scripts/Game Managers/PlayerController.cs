@@ -78,7 +78,6 @@ namespace Task
             }
         }
 
-
         [PunRPC] private void RPC_InstanciatePlayerMaterial()
         {
             // we are not editing material in prefab, we will edit in its instance again through a rpc callback on all client's end
@@ -116,8 +115,13 @@ namespace Task
 
             //Cursor.lockState = CursorLockMode.Confined; // make cursor locked by default
         }
+
+        private void OnDestroy()
+        {
+            _InputHandler_.Reset();
+        }
         #endregion
-        
+
         #region Updates (per frame)
         private void Update()
         {

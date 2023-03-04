@@ -130,6 +130,7 @@ namespace Task
 
         private void OnDisable()
         {
+            if (_InputActions_ == null) return;
             _InputActions_.Disable();
             _PlayerInput_.Disable();
         }
@@ -158,6 +159,15 @@ namespace Task
         public void AutoSprint_GiveOverride()
         {
             _PlayerInput_.Move.performed += HandleMovement;
+        }
+
+        public void Reset()
+        {
+            inp_Move = Vector2.zero;
+            inp_Look = Vector2.zero;
+            Mouse_ScrollWheel = 0f;
+            Shift_BtnHold = Space_BtnDown = LeftMouseBtn_BtnDown = LeftMouse_BtnHold = 
+                R_BtnDown = WeaponNext = WeaponPrev = Tab_BtnHold = false;
         }
     }
 }
