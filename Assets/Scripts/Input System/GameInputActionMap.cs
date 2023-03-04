@@ -273,7 +273,7 @@ public partial class @GameInputActionMap: IInputActionCollection2, IDisposable
                     ""name"": """",
                     ""id"": ""44052005-ace1-4c2a-85e2-ab53c7736ecb"",
                     ""path"": ""<Gamepad>/leftTrigger"",
-                    ""interactions"": ""Hold"",
+                    ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Android"",
                     ""action"": ""Sprint"",

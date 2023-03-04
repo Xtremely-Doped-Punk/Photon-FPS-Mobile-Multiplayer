@@ -61,7 +61,7 @@ namespace Task
         public float MouseY_Axis => inp_Look.y / MOUSE_AXIS_SCALER;
         public float Horizontal_Axis => inp_Move.x;
         public float Vertical_Axis => inp_Move.y;
-        [field: SerializeField] public bool Shift_BtnHold { get; private set; } = false;
+        [field: SerializeField] public bool Shift_BtnHold { get; set; } = false; // android custom ui
         [field: SerializeField] public bool Space_BtnDown { get; private set; } = false;
         [field: SerializeField] public bool LeftMouse_BtnHold { get; private set; } = false;
         [field: SerializeField] public bool LeftMouseBtn_BtnDown { get; private set; } = false;
@@ -73,7 +73,7 @@ namespace Task
 
 
         // private calc, serialized just for reference/debugging
-        [SerializeField] private Vector2 inp_Move;
+        [SerializeField] private Vector2 inp_Move; public Vector2 moveDelta => inp_Move;
         [SerializeField] private Vector2 inp_Look;
 
 
@@ -93,7 +93,7 @@ namespace Task
             _PlayerInput_ = _InputActions_.PlayerController;
 
             // declare lamda fns to save locally
-            _PlayerInput_.Move.performed += InpActCB => inp_Move = InpActCB.ReadValue<Vector2>();
+            _PlayerInput_.Move.performed += HandleMovement;
             _PlayerInput_.Look.performed += HandleCamera;
 
             _PlayerInput_.Sprint.performed += InpActCB => { Shift_BtnHold = InpActCB.action.IsPressed(); };
@@ -118,6 +118,11 @@ namespace Task
             _PlayerInput_.Enable();
         }
 
+        private void HandleMovement(InputAction.CallbackContext InpActCB)
+        {
+            inp_Move = InpActCB.ReadValue<Vector2>();
+        }
+
         private void HandleCamera(InputAction.CallbackContext InpActCB)
         {
             inp_Look = InpActCB.ReadValue<Vector2>();
@@ -137,12 +142,22 @@ namespace Task
 
         public void CamUI_EnterOverride()
         {
-            inp_Look = Vector2.zero;
             _PlayerInput_.Look.performed -= HandleCamera;
+            inp_Look = Vector2.zero;
         }
         public void CamUI_ExitOverride()
         {
             _PlayerInput_.Look.performed += HandleCamera;
+        }
+
+        public void AutoSprint_TakeOverride(Vector2 dir)
+        {
+            _PlayerInput_.Move.performed -= HandleMovement;
+            inp_Move = dir.normalized;
+        }
+        public void AutoSprint_GiveOverride()
+        {
+            _PlayerInput_.Move.performed += HandleMovement;
         }
     }
 }

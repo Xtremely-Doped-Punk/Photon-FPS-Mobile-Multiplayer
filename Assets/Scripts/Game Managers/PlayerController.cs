@@ -126,9 +126,9 @@ namespace Task
             if (_InputHandler_ == null) _InputHandler_ = PlayerInputHandler.Instance;
 
             CameraCtrlUpdate();
-            MovementUpdate(_InpTest_);
-            TryJumpUpdate(_InpTest_);
-            SwitchGunsUpdate(_InpTest_);
+            MovementUpdate();
+            TryJumpUpdate();
+            SwitchGunsUpdate();
 
             if (transform.position.y < -10f) // Die if you fall out of the world
             {
