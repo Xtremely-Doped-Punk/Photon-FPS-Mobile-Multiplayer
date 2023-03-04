@@ -4,7 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
+using Unity.Burst.CompilerServices;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.UI;
 using Hashtable = ExitGames.Client.Photon.Hashtable; // as there is an ambiguity bet System.Collections.Hastable and Photon.Hastable
 
@@ -18,7 +21,7 @@ namespace Task
         // make sure to implement as a RPC fn inside it to update it on all clients as well
     }
 
-    //[RequireComponent(typeof(Rigidbody))]
+    //[RequireComponent(typeof(PlayerInputHandler))]
     public class PlayerController : NetworkObject, IDamageable
     {
         public const int MAX_PLAYER_HEALTH = 100;
@@ -28,13 +31,17 @@ namespace Task
         private void Reset()
         {
             _Rigidbody = GetComponent<Rigidbody>();
+            _InputHandler_ = GetComponent<PlayerInputHandler>();
         }
 
         [Header("Referneces Required")]
         [SerializeField] private Rigidbody _Rigidbody;
+        [field: SerializeField, Tooltip("Set reference to the prefab/script asset")] 
+        public PlayerInputHandler _InputHandler_ { get; private set; } = null;
         [field: SerializeField] public Camera FPS_Camera { get; private set; } = null;
         [SerializeField] private PlayerGroundCheck _PlayerGroundCheck;
         [SerializeField] private Canvas _OverLay_UI_Canvas;
+        [SerializeField] private GameObject AndroidInputOverlay;
         [SerializeField] private Image _HP_BarReverse;
         [SerializeField] private Image _ui_HpDisp;
         [field: SerializeField] public TMP_Text AmmoTxt { get; private set; } = null;
@@ -47,6 +54,8 @@ namespace Task
         [SerializeField, Range(100, 1000)] private float _jumpForce = 250;
         [SerializeField] private float _sprintBoostSpeed, _walkSpeed;
         [SerializeField, Range(0, 1)] private float _smoothTime = .15f;
+        [Tooltip("enable this to test player controls, which bypasses the player network connectivity")] 
+        public bool _InpTest_;
 
         private float verticalLookRotation;
         private Vector3 smoothMoveVelocity;
@@ -55,9 +64,25 @@ namespace Task
         private float mobilityMultiplier = NO_ITEM_EQUIPPED_MULTIPLIER;
         [HideInInspector] public PlayerManager playerManager;
 
+
+
+        #region Initializations
         private void Awake()
         {
-            photonView.RPC(nameof(RPC_InstanciatePlayerMaterial), RpcTarget.AllBuffered);
+            if (_InpTest_)
+                PhotonNetwork.OfflineMode = true;
+            else
+            {
+                photonView.RPC(nameof(RPC_InstanciatePlayerMaterial), RpcTarget.AllBuffered);
+                if (Application.isMobilePlatform)
+                {
+                    AndroidInputOverlay.SetActive(true);
+                    foreach (Image ui in AndroidInputOverlay.GetComponentsInChildren<Image>().Skip(1))
+                    {
+                        ui.gameObject.AddComponent<AndroidUIOverrider>();
+                    }
+                }
+            }
         }
 
 
@@ -71,16 +96,17 @@ namespace Task
         {
             /* information of other objects that habe instanciated this object can be found in photonView.InstantiationData as
             player maganager intializes this obj, we are searching for that obj's unique viewID in the set of gameObjs in scene */
-            if (playerManager == null)
+            if (!_InpTest_ && playerManager == null)
                 playerManager = PhotonView.Find((int)photonView.InstantiationData[0]).GetComponent<PlayerManager>();
 
-            if (photonView.IsMine)
+            if (_InpTest_ || photonView.IsMine)
             {
                 FPS_Camera.gameObject.AddComponent<AudioListener>(); // revomed in prefab
                 EquipGun(0); // equip gun initially
                 if (Camera.main != null && Camera.main != FPS_Camera) Camera.main.enabled = false;
 
-
+                _InputHandler_ = Instantiate(_InputHandler_); 
+                // initialize with prefab and in runtime it will refernce it to the instance in scene
             }
             else
             {
@@ -95,45 +121,57 @@ namespace Task
                 FPS_Camera.enabled = false;
             }
 
-            Cursor.lockState = CursorLockMode.Locked; // make cursor locked by default
+            //Cursor.lockState = CursorLockMode.Confined; // make cursor locked by default
         }
-
+        #endregion
+        
         #region Updates (per frame)
         private void Update()
         {
-            if (!photonView.IsMine)
+            if (!_InpTest_ && !photonView.IsMine)
                 return;
+            if (_InputHandler_ == null) _InputHandler_ = PlayerInputHandler.Instance;
 
             CameraCtrlUpdate();
-            MovementUpdate();
-            TryJumpUpdate();
-            SwitchGunsUpdate();
+            MovementUpdate(_InpTest_);
+            TryJumpUpdate(_InpTest_);
+            SwitchGunsUpdate(_InpTest_);
 
             if (transform.position.y < -10f) // Die if you fall out of the world
             {
                 Dead();
             }
-
-            if (Input.GetKeyDown(KeyCode.Escape))
+            //var esc = Input.GetKeyDown(KeyCode.Escape);
+            var esc = Keyboard.current.escapeKey.wasPressedThisFrame;
+            if (esc)
             {
                 CursorLockSwitch();
             }
         }
 
-        private void CameraCtrlUpdate()
+        private void CameraCtrlUpdate(bool _InpTest_ = false)
         {
             // horizontal rotation (by player)
-            transform.Rotate(Vector3.up * Input.GetAxisRaw("Mouse X") * _mouseSensitivity);
+            
+            //var mouseX = Input.GetAxisRaw("Mouse X");
+            var mouseX = _InputHandler_.MouseX_Axis;
+            if (_InpTest_)
+                Debug.Log("Mouse X = " + mouseX);
+            transform.Rotate(Vector3.up * mouseX * _mouseSensitivity);
 
             // vertical rotation (by camera)
-            verticalLookRotation += Input.GetAxisRaw("Mouse Y") * _mouseSensitivity;
+
+            //var mouseY = Input.GetAxisRaw("Mouse Y");
+            var mouseY = _InputHandler_.MouseY_Axis;
+            if (_InpTest_)
+                Debug.Log("Mouse Y = " + mouseY);
+            verticalLookRotation += mouseY * _mouseSensitivity;
             verticalLookRotation = Mathf.Clamp(verticalLookRotation, -90f, 90f); // clamp value bet top and bottom
 
             var eulerAng = Vector3.left * verticalLookRotation;
             FPS_Camera.transform.localEulerAngles = eulerAng;
 
-            // update item view along with cam (no need as it a child of camera)
-            /*
+            /*// update item view along with cam (no need as it a child of camera)
             if (equippedGunIdx!=-1)
             {
                 _gunLoadout[equippedGunIdx].gameObject.transform.localEulerAngles = eulerAng;
@@ -141,11 +179,26 @@ namespace Task
             */
         }
 
-        private void MovementUpdate()
+        private void MovementUpdate(bool _InpTest_ = false)
         {
             // horizontal axis & vertical axis both give value between [-1,1]; thus should be normalized to direction of movement as magnitude 1
-            Vector3 moveDir = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical")).normalized;
-            var speed = _walkSpeed + (Input.GetKey(KeyCode.LeftShift) ? _sprintBoostSpeed : 0);
+
+            //var horizontal = Input.GetAxisRaw("Horizontal");
+            //var vertical = Input.GetAxisRaw("Vertical");
+            //Vector3 moveDir = new Vector3(horizontal, 0, vertical).normalized;
+            var horizontal = _InputHandler_.Horizontal_Axis;
+            var vertical = _InputHandler_.Vertical_Axis;
+            Vector3 moveDir = new Vector3(horizontal, 0, vertical); // new input action map, we can directly add normalize processor
+            if (_InpTest_)
+            {
+                Debug.Log("Move Dir = " + moveDir);
+            }
+
+            //var shift = Input.GetKey(KeyCode.LeftShift);
+            var shift = _InputHandler_.Shift_BtnHold;
+            if (_InpTest_)
+                Debug.Log("Shift = " + shift);
+            var speed = _walkSpeed + (shift ? _sprintBoostSpeed : 0);
 
             // gun equiping mobility comes into play here as a multipler factor
             speed *= mobilityMultiplier;
@@ -154,17 +207,23 @@ namespace Task
             // ref => call by reference parameter, i.e., smoothMoveVelocity is updated in SmoothDamp() itself
         }
 
-        void TryJumpUpdate()
+        void TryJumpUpdate(bool _InpTest_ = false)
         {
-            if (Input.GetKeyDown(KeyCode.Space) && _PlayerGroundCheck.isGrounded)
+            //bool space = Input.GetKeyDown(KeyCode.Space);
+            bool space = _InputHandler_.Space_BtnDown;
+            if (_InpTest_)
+                Debug.Log("Space = " + space);
+
+            if (space && _PlayerGroundCheck.isGrounded)
             {
                 _Rigidbody.AddForce(transform.up * _jumpForce);
             }
         }
 
-        private void SwitchGunsUpdate()
+        private void SwitchGunsUpdate(bool _InpTest_ = false)
         {
-            // Number Key Inputs
+            // Number Key Inputs (will be later implemented in new input system)
+            /*
             for (int i = 0; i < _gunLoadout.Length; i++)
             {
                 if (Input.GetKeyDown((i + 1 +1).ToString())) // range of weapons [-1..] as -1 => equip none, thus +1
@@ -173,13 +232,23 @@ namespace Task
                     break;
                 }
             }
+            */
 
             // Mouse Scroll Inputs
-            if (Input.GetAxisRaw("Mouse ScrollWheel") > 0f) // upward scroll (increment idx)
+            //var next = (Input.GetAxisRaw("Mouse ScrollWheel") > 0f)
+            var next = (_InputHandler_.Mouse_ScrollWheel > 0f) || _InputHandler_.WeaponNext;
+            //var prev = (Input.GetAxisRaw("Mouse ScrollWheel") < 0f)
+            var prev = (_InputHandler_.Mouse_ScrollWheel < 0f) || _InputHandler_.WeaponPrev;
+            if (_InpTest_)
+            {
+                Debug.Log("Weapon switch next = " + next);
+                Debug.Log("Weapon switch prev = " + next);
+            }
+            if (next) // upward scroll (increment idx)
             {
                 EquipGun(((equippedGunIdx +1 +1) % (_gunLoadout.Length + 1)) - 1);
             }
-            else if (Input.GetAxisRaw("Mouse ScrollWheel") < 0f) // downward scroll (decrement idx)
+            else if (prev) // downward scroll (decrement idx)
             {
                 EquipGun(((equippedGunIdx +1 + _gunLoadout.Length +1 -1) % (_gunLoadout.Length + 1)) - 1);
             }
@@ -187,7 +256,7 @@ namespace Task
 
         void FixedUpdate() // update rigidbody physics here (to make it independent of fps, use fixed delta time step)
         {
-            if (!photonView.IsMine)
+            if (!_InpTest_ && !photonView.IsMine)
                 return;
 
             _Rigidbody.MovePosition(_Rigidbody.position + transform.TransformDirection(moveAmount) * Time.fixedDeltaTime);
@@ -199,7 +268,8 @@ namespace Task
 
         public void TakeDamage(int damageAmt) // interface fn needs to be in public
         {
-            photonView.RPC(nameof(RPC_DealDamage), photonView.Owner, damageAmt, playerManager.photonView.ViewID); 
+            if (!_InpTest_)
+                photonView.RPC(nameof(RPC_DealDamage), photonView.Owner, damageAmt, playerManager.photonView.ViewID); 
             // targeted rpc call => call rpc on specific player (who is the owner, here)
         }
 
@@ -240,7 +310,10 @@ namespace Task
 
         private void Dead()
         {
-            playerManager.OnDie();
+            if (!_InpTest_)
+                playerManager.OnDie();
+            else
+                transform.position = Vector3.zero;
         }
         #endregion
 
@@ -262,7 +335,7 @@ namespace Task
                 equippedGunIdx = _index; mobilityMultiplier = _gunLoadout[_index].ConfigInfo.MobilityMultiplier;
             }
 
-            if (photonView.IsMine) // owner if this player, must broadcast his equiped gun, so that it can synced from other player's end
+            if (!_InpTest_ && photonView.IsMine) // owner if this player, must broadcast his equiped gun, so that it can synced from other player's end
             {
                 // using photon's networked hash table we can share the required information as custom properties
                 // acts like a dictionary <string: property name, byte array, i.e. object> (that need to type casted accordingly)
@@ -287,6 +360,11 @@ namespace Task
         #endregion
 
         #region CursorLock
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (!Application.isMobilePlatform)
+                Cursor.lockState = hasFocus ? CursorLockMode.Locked : CursorLockMode.None;
+        }
         private void CursorLockSwitch()
         {
             switch (Cursor.lockState)

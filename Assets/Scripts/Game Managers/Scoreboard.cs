@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Photon.Realtime;
 using Photon.Pun;
 using System.IO;
@@ -61,12 +62,21 @@ namespace Task
 
         void Update()
 		{
-			// setting game object active per frame is slow, thus we use canvas group
-			if (Input.GetKeyDown(KeyCode.Tab))
+            // setting game object active per frame is slow, thus we use canvas group
+            //var tab_down = Input.GetKeyDown(KeyCode.Tab);
+            //var tab_up = Input.GetKeyUp(KeyCode.Tab);
+            //var tab_down = Keyboard.current.tabKey.wasPressedThisFrame;
+            //var tab_up = Keyboard.current.tabKey.wasReleasedThisFrame;
+            
+			if (PlayerInputHandler.Instance == null) return;
+
+            var tab_hold = PlayerInputHandler.Instance.Tab_BtnHold;
+
+            if (tab_hold)
 			{
 				_canvasGroup.alpha = 1; // show
 			}
-			else if (Input.GetKeyUp(KeyCode.Tab))
+			else
 			{
 				_canvasGroup.alpha = 0; // hide
 			}

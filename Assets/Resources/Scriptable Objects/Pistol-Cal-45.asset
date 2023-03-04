@@ -17,4 +17,4 @@ MonoBehaviour:
   <FireRate>k__BackingField: 1
   <Mobility>k__BackingField: 80
   <Capacity>k__BackingField: 16
-  <ReloadDelay>k__BackingField: 0.75
+  <ReloadDelay>k__BackingField: 1.25

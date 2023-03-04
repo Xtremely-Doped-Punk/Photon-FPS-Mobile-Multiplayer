@@ -1,6 +1,7 @@
 using Photon.Pun;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace Task
@@ -16,6 +17,8 @@ namespace Task
         private TMP_Text _magUI => _controller.AmmoTxt;
 
         private Image _reloadUI => _controller.ReloadImg;
+        private PlayerInputHandler _InputHandler_ => _controller._InputHandler_;
+        private bool _InpTest_ => _controller._InpTest_;
 
         [Header("Behaviour Configurations")]
         [SerializeField] private float _bulletImpactDestroyDelay = 7.5f;
@@ -47,44 +50,63 @@ namespace Task
 
         private void OnDisable()
         {
-            if (!photonView.IsMine) return;
+            if (!_InpTest_ && !photonView.IsMine) return;
             _magUI.gameObject.SetActive(false);
             _reloadUI.gameObject.SetActive(false);
             //Debug.Log(gameObject+"disabled");
+            CancelInvoke(); // cancel reload invoke fn called earlier
         }
 
         private void OnEnable()
         {
-            if (!photonView.IsMine) return;
-            reloadCountdown = ConfigInfo.ReloadDelay;
-            _magUI.gameObject.SetActive(true);
-            _reloadUI.gameObject.SetActive(true);
+            if (!_InpTest_ && !photonView.IsMine) return;
+            if (isReloaing)
+            {
+                if (!_autoReload || currMagCap != 0)
+                {
+                    isReloaing = false; // cancels out auto reload when weapons are switched
+                    reloadCountdown = 0; ReloadUI_Update();
+                }
+                else
+                    GunReloading();
+            }
+            _magUI.gameObject.SetActive(true); MagUI_Update();
+            _reloadUI.gameObject.SetActive(true); ReloadUI_Update();
             //Debug.Log(gameObject+"enabled");
         }
 
         private void Update()
         {
-            if (!photonView.IsMine) return;
+            if (!_InpTest_ && !photonView.IsMine) return;
 
             if (isReloaing)
             {
                 reloadCountdown -= Time.deltaTime;
                 // update reload ui
-                _reloadUI.fillAmount = reloadCountdown / ConfigInfo.ReloadDelay;
+                ReloadUI_Update();
             }
             else
             {
                 if (ConfigInfo.IsSingleShot)
                 {
-                    if (Input.GetMouseButtonDown((int)UnityEngine.UIElements.MouseButton.LeftMouse))
+                    //var left_mouse_down = Input.GetMouseButtonDown((int)UnityEngine.UIElements.MouseButton.LeftMouse);
+                    var left_mouse_down = _InputHandler_.LeftMouseBtn_BtnDown;
+                    if (_InpTest_)
+                        Debug.Log("Left Mouse Btn Down = " + left_mouse_down);
+
+                    if (left_mouse_down)
                     {
                         Shoot();
                     }
                 }
                 else
                 {
-                    // fire rate and reload fn to be added
-                    if (Input.GetMouseButton((int)UnityEngine.UIElements.MouseButton.LeftMouse))
+                    //var left_mouse_hold = Input.GetMouseButton((int)UnityEngine.UIElements.MouseButton.LeftMouse);
+                    var left_mouse_hold = _InputHandler_.LeftMouse_BtnHold;
+                    if (_InpTest_)
+                        Debug.Log("Left Mouse Btn Hold = " + left_mouse_hold);
+
+                    if (left_mouse_hold)
                     {
                         fireRateTimer -= Time.deltaTime;
 
@@ -97,7 +119,12 @@ namespace Task
                     }
                 }
 
-                if (Input.GetKeyDown(KeyCode.R)) // manual reload
+                //var r_down = Input.GetKeyDown(KeyCode.R);
+                var r_down = _InputHandler_.R_BtnDown;
+                if (_InpTest_)
+                    Debug.Log("R Btn Down = " + r_down);
+
+                if (r_down && currMagCap != ConfigInfo.Capacity) // manual reload (wont reload if at full mag)
                 {
                     GunReloading();
                 }
@@ -135,6 +162,10 @@ namespace Task
         {
             _magUI.text = currMagCap.ToString() + "/" + ConfigInfo.Capacity;
         }
+        private void ReloadUI_Update()
+        {
+            _reloadUI.fillAmount = reloadCountdown / ConfigInfo.ReloadDelay;
+        }
 
         private void GunReloading()
         {
@@ -148,7 +179,8 @@ namespace Task
             isReloaing = false; // turn off reloading ui also
             currMagCap = ConfigInfo.Capacity;
             MagUI_Update();
-            _reloadUI.fillAmount = reloadCountdown = 0;
+            reloadCountdown = 0;
+            ReloadUI_Update();
         }
 
         [PunRPC]
@@ -160,7 +192,6 @@ namespace Task
             if (colliders.Length != 0)
             {
                 //Debug.Log("Hit: " + colliders[0].gameObject.name + ", Count: " + colliders.Length);
-
                 MeshRenderer bulletImpact =
                     Instantiate(
                         _BulletImpactPrefab, hitPosition + hitNormal * 0.001f,

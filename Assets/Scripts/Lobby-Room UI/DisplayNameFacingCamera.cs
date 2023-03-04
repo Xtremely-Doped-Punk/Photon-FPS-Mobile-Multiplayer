@@ -15,10 +15,11 @@ namespace Task
 
         void Start()
         {
-            if (playerPV.IsMine)
+            if (playerPV == null || playerPV.IsMine)
             {
                 Destroy(gameObject);
                 //gameObject.SetActive(false);
+                return;
             }
 
             text.text = playerPV.Owner.NickName;
