@@ -1,5 +1,6 @@
 using Photon.Pun;
 using Photon.Realtime;
+using Photon.Voice.PUN;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -73,6 +74,7 @@ namespace Task
                 PhotonNetwork.OfflineMode = true;
             else
             {
+                //GetComponent<PhotonVoiceView>().enabled = true;
                 photonView.RPC(nameof(RPC_InstanciatePlayerMaterial), RpcTarget.AllBuffered);
                 AndroidInputOverlay.SetActive(Application.isMobilePlatform);
             }
@@ -163,7 +165,8 @@ namespace Task
             if (_InpTest_)
                 Debug.Log("Mouse Y = " + mouseY);
             verticalLookRotation += mouseY * _mouseSensitivity;
-            verticalLookRotation = Mathf.Clamp(verticalLookRotation, -90f, 90f); // clamp value bet top and bottom
+            verticalLookRotation = Mathf.Clamp(verticalLookRotation, -85f, 85f); // clamp value bet top and bottom
+            // 90 degree clamp makes to able to be shoot on themselves, i.e., player itself
 
             var eulerAng = Vector3.left * verticalLookRotation;
             FPS_Camera.transform.localEulerAngles = eulerAng;

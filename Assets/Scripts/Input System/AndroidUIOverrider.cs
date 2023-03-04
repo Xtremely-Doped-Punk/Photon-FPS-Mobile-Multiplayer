@@ -30,7 +30,7 @@ namespace Task
         private void Update()
         {
             if (InputHandler == null) return;
-            var canSprint = InputHandler.moveDelta.magnitude > 0.9f;
+            var canSprint = InputHandler.moveDeltaMagnitude > 0.9f;
             if (canSprint && !sprintabilityUI.activeSelf)
             {
                 sprintabilityUI.SetActive(true);

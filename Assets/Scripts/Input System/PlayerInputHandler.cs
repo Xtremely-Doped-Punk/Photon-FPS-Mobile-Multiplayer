@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Windows;
 
 namespace Task
 {
@@ -12,6 +11,12 @@ namespace Task
         // scale values to match up new input system to old input system
         //#if ENABLE_INPUT_SYSTEM
         public const float MOUSE_AXIS_SCALER = 10;
+
+        string primaryBinding = "<Touchscreen>/delta";
+        string secondaryBinding = "<Touchscreen>/touch1/delta";
+
+        int Android_CamBindIndex;
+        InputActionSetupExtensions.BindingSyntax Android_Cam_Binding;
 
         // singleton
         public static PlayerInputHandler Instance { get; private set; }
@@ -61,19 +66,22 @@ namespace Task
         public float MouseY_Axis => inp_Look.y / MOUSE_AXIS_SCALER;
         public float Horizontal_Axis => inp_Move.x;
         public float Vertical_Axis => inp_Move.y;
-        [field: SerializeField] public bool Shift_BtnHold { get; set; } = false; // android custom ui
-        [field: SerializeField] public bool Space_BtnDown { get; private set; } = false;
-        [field: SerializeField] public bool LeftMouse_BtnHold { get; private set; } = false;
-        [field: SerializeField] public bool LeftMouseBtn_BtnDown { get; private set; } = false;
-        [field: SerializeField] public bool R_BtnDown { get; private set; } = false;
-        [field: SerializeField] public bool WeaponNext { get; private set; } = false;
-        [field: SerializeField] public bool WeaponPrev { get; private set; } = false;
         [field: SerializeField] public float Mouse_ScrollWheel { get; private set; } = 0f;
-        [field: SerializeField] public bool Tab_BtnHold { get; private set; } = false;
+        [field: SerializeField] public bool LeftMouse_BtnHold { get; private set; } = false;
+        [field: SerializeField] public bool Shift_BtnHold { get; set; } = false; // android custom ui
+
+        // Per frame updates can be directly accesed from input handler
+        public bool Space_BtnDown => _PlayerInput_.Jump.WasPerformedThisFrame();
+        public bool LeftMouseBtn_BtnDown => _PlayerInput_.Fire.WasPressedThisFrame();
+        public bool R_BtnDown => _PlayerInput_.Reload.WasPressedThisFrame();
+        public bool WeaponNext => _PlayerInput_.WeaponSwitchNext.WasPressedThisFrame();
+        public bool WeaponPrev => _PlayerInput_.WeaponSwitchPrev.WasPressedThisFrame();
+        public bool Tab_BtnDown => _PlayerInput_.ScoreBoard.WasPressedThisFrame();
+        public bool Tab_BtnUp => _PlayerInput_.ScoreBoard.WasReleasedThisFrame();
 
 
         // private calc, serialized just for reference/debugging
-        [SerializeField] private Vector2 inp_Move; public Vector2 moveDelta => inp_Move;
+        [SerializeField] private Vector2 inp_Move; public float moveDeltaMagnitude => inp_Move.magnitude;
         [SerializeField] private Vector2 inp_Look;
 
 
@@ -92,6 +100,12 @@ namespace Task
 
             _PlayerInput_ = _InputActions_.PlayerController;
 
+            /*
+            foreach (var bindings in _PlayerInput_.Look.bindings)
+            {
+                Debug.Log(bindings);
+            }*/
+
             // declare lamda fns to save locally
             _PlayerInput_.Move.performed += HandleMovement;
             _PlayerInput_.Look.performed += HandleCamera;
@@ -99,23 +113,28 @@ namespace Task
             _PlayerInput_.Sprint.performed += InpActCB => { Shift_BtnHold = InpActCB.action.IsPressed(); };
             _PlayerInput_.Sprint.canceled += InpActCB => { Shift_BtnHold = InpActCB.action.IsPressed(); };
 
-            _PlayerInput_.Jump.performed += InpActCB => { Space_BtnDown = InpActCB.action.IsPressed(); };
-
-            _PlayerInput_.Fire.performed += InpActCB =>
-            { LeftMouse_BtnHold = LeftMouseBtn_BtnDown = InpActCB.action.IsPressed(); };
+            _PlayerInput_.Fire.performed += InpActCB => { LeftMouse_BtnHold = InpActCB.action.IsPressed(); };
             _PlayerInput_.Fire.canceled += InpActCB => { LeftMouse_BtnHold = InpActCB.action.IsPressed(); };
 
-            _PlayerInput_.Reload.performed += InpActCB => { R_BtnDown = InpActCB.action.IsPressed(); };
-
-            _PlayerInput_.WeaponSwitchNext.performed += InpActCB => { WeaponNext = InpActCB.action.IsPressed(); };
-            _PlayerInput_.WeaponSwitchPrev.performed += InpActCB => { WeaponPrev = InpActCB.action.IsPressed(); };
             _PlayerInput_.WeaponScroll.performed += InpActCB => Mouse_ScrollWheel = InpActCB.ReadValue<float>();
 
-            _PlayerInput_.ScoreBoard.performed += InpActCB => { Tab_BtnHold = InpActCB.action.IsPressed(); };
-            _PlayerInput_.ScoreBoard.canceled += InpActCB => { Tab_BtnHold = InpActCB.action.IsPressed(); };
+            /*
+            _PlayerInput_.Jump.performed += InpActCB => { Space_BtnDown = InpActCB.action.IsPressed(); }; 
+            _PlayerInput_.Reload.performed += InpActCB => { R_BtnDown = InpActCB.action.IsPressed(); };
+            _PlayerInput_.WeaponSwitchNext.performed += InpActCB => { WeaponNext = InpActCB.action.IsPressed(); };
+            _PlayerInput_.WeaponSwitchPrev.performed += InpActCB => { WeaponPrev = InpActCB.action.IsPressed(); };
+            */
+            // in late update, need to reset the per frame accesors
 
             _InputActions_.Enable();
             _PlayerInput_.Enable();
+
+
+            // harcoded for now, later can be made dynamic in rebinding
+            // for now, control scheme: "Android", unter Look action map,
+            // binding "<Touchscreen>/delta" will be switched to 2ndary screen touch when primary touch is controlling on screen stick
+            Android_CamBindIndex = _PlayerInput_.Look.GetBindingIndex(group: "Android", path: primaryBinding);
+            Android_Cam_Binding = _PlayerInput_.Look.ChangeBinding(Android_CamBindIndex);
         }
 
         private void HandleMovement(InputAction.CallbackContext InpActCB)
@@ -135,19 +154,24 @@ namespace Task
             _PlayerInput_.Disable();
         }
 
+        /* better way found
         private void LateUpdate()
         {
             // reset all one frame only inputs here
-            Space_BtnDown = LeftMouseBtn_BtnDown = R_BtnDown = WeaponNext = WeaponPrev = false;
-        }
+            //Space_BtnDown = LeftMouseBtn_BtnDown = R_BtnDown = WeaponNext = WeaponPrev = false;
+        }*/
 
         public void CamUI_EnterOverride()
         {
-            _PlayerInput_.Look.performed -= HandleCamera;
-            inp_Look = Vector2.zero;
+            // previously whenever on-screen stick was held, cam controls was disabled
+            _PlayerInput_.Look.performed -= HandleCamera; inp_Look = Vector2.zero;
+            Android_Cam_Binding.WithPath(secondaryBinding);
+            _PlayerInput_.Look.performed += HandleCamera;
         }
         public void CamUI_ExitOverride()
         {
+            _PlayerInput_.Look.performed -= HandleCamera; inp_Look = Vector2.zero;
+            Android_Cam_Binding.WithPath(primaryBinding);
             _PlayerInput_.Look.performed += HandleCamera;
         }
 
@@ -166,8 +190,7 @@ namespace Task
             inp_Move = Vector2.zero;
             inp_Look = Vector2.zero;
             Mouse_ScrollWheel = 0f;
-            Shift_BtnHold = Space_BtnDown = LeftMouseBtn_BtnDown = LeftMouse_BtnHold = 
-                R_BtnDown = WeaponNext = WeaponPrev = Tab_BtnHold = false;
+            Shift_BtnHold = LeftMouse_BtnHold = false;
         }
     }
 }

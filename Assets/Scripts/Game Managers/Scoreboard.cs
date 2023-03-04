@@ -70,13 +70,11 @@ namespace Task
             
 			if (PlayerInputHandler.Instance == null) return;
 
-            var tab_hold = PlayerInputHandler.Instance.Tab_BtnHold;
-
-            if (tab_hold)
+            if (PlayerInputHandler.Instance.Tab_BtnDown)
 			{
 				_canvasGroup.alpha = 1; // show
 			}
-			else
+			else if (PlayerInputHandler.Instance.Tab_BtnUp)
 			{
 				_canvasGroup.alpha = 0; // hide
 			}
