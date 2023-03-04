@@ -74,7 +74,7 @@ namespace Task
             else
             {
                 photonView.RPC(nameof(RPC_InstanciatePlayerMaterial), RpcTarget.AllBuffered);
-                //AndroidInputOverlay.SetActive(Application.isMobilePlatform);
+                AndroidInputOverlay.SetActive(Application.isMobilePlatform);
             }
         }
 
