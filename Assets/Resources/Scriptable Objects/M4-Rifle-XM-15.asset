@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83823f15f4249c54b954d6487a76f34c, type: 3}
   m_Name: M4-Rifle-XM-15
   m_EditorClassIdentifier: 
-  <GunName>k__BackingField: M4-Rifle(XM-15)
+  <itemName>k__BackingField: M4 Rifle XM 15
+  <Mobility>k__BackingField: 40
   <Damage>k__BackingField: 25
   <FireRate>k__BackingField: 800
-  <Mobility>k__BackingField: 100
   <Capacity>k__BackingField: 31
   <ReloadDelay>k__BackingField: 2.25

@@ -4,6 +4,7 @@ using Photon.Pun;
 using System.Collections.Generic;
 using Photon.Realtime;
 using UnityEngine.Rendering;
+using PM_FPS;
 
 namespace Task
 {

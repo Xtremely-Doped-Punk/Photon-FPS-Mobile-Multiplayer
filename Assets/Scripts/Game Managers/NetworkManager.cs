@@ -9,7 +9,7 @@ using UnityEditor;
 using UnityEngine.Rendering;
 using System.Collections;
 
-namespace Task
+namespace PM_FPS
 {
     public class NetworkManager : MonoBehaviourPunCallbacks // overwriting existing photon callbacks
     {

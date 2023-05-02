@@ -2,9 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.OnScreen;
 
-namespace Task
+namespace PM_FPS
 {
     public class AndroidUIOverrider : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     {
@@ -16,14 +17,19 @@ namespace Task
         // wont work exactly the wanted to...
         public void OnPointerDown(PointerEventData data)
         {
-            InputHandler.Shift_BtnHold = false;
-            InputHandler.AutoSprint_GiveOverride(); // tap the joystick again to stop auto sprint
-            InputHandler.CamUI_EnterOverride();
-            //Debug.Log("Joystick pointer down");
+            InputHandler.SprintHold = false;
+            Debug.Log(data.pointerId);
+            if (data.pointerId == Touchscreen.current.primaryTouch.touchId.valueSizeInBytes)
+            {
+                InputHandler.AutoSprint_GiveOverride(); // tap the joystick again to stop auto sprint
+                InputHandler.CamUI_EnterOverride();
+                //Debug.Log("Joystick pointer down");
+            }
         }
         public void OnPointerUp(PointerEventData data)
         {
-            InputHandler.CamUI_ExitOverride();
+            if (data.pointerId == Touchscreen.current.primaryTouch.touchId.valueSizeInBytes)
+                InputHandler.CamUI_ExitOverride();
             //Debug.Log("Joystick pointer up");
         }
 
@@ -42,7 +48,7 @@ namespace Task
         // event trigger buttonbutton
         public void SprintLock()
         {
-            InputHandler.Shift_BtnHold = true;
+            InputHandler.SprintHold = true;
             InputHandler.AutoSprint_TakeOverride(new Vector2(0, 1)); // set auto run in forward direction
             //Debug.Log("SprintLock pointer enter");
         }

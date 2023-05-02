@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83823f15f4249c54b954d6487a76f34c, type: 3}
   m_Name: Pistol-Cal-45
   m_EditorClassIdentifier: 
-  <GunName>k__BackingField: Pistol-Cal45
+  <itemName>k__BackingField: Pistol Cal 45
+  <Mobility>k__BackingField: 70
   <Damage>k__BackingField: 45
   <FireRate>k__BackingField: 1
-  <Mobility>k__BackingField: 80
   <Capacity>k__BackingField: 16
   <ReloadDelay>k__BackingField: 1.25

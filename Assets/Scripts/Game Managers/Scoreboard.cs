@@ -4,6 +4,7 @@ using UnityEngine.InputSystem;
 using Photon.Realtime;
 using Photon.Pun;
 using System.IO;
+using PM_FPS;
 
 namespace Task
 {
@@ -70,11 +71,11 @@ namespace Task
             
 			if (PlayerInputHandler.Instance == null) return;
 
-            if (PlayerInputHandler.Instance.Tab_BtnDown)
+            if (PlayerInputHandler.Instance.PlayerInput.ScoreBoard.WasPressedThisFrame())
 			{
 				_canvasGroup.alpha = 1; // show
 			}
-			else if (PlayerInputHandler.Instance.Tab_BtnUp)
+			else if (PlayerInputHandler.Instance.PlayerInput.ScoreBoard.WasReleasedThisFrame())
 			{
 				_canvasGroup.alpha = 0; // hide
 			}

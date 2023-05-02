@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 4518132994061106608}
   - component: {fileID: 3747324387343463903}
   - component: {fileID: 4680138702380498547}
+  - component: {fileID: 4143279794781408924}
   m_Layer: 0
   m_Name: Network Manager
   m_TagString: Untagged
@@ -159,3 +160,16 @@ MonoBehaviour:
   useOnAudioFilterRead: 0
   useMicrophoneTypeFallback: 1
   recordWhenJoined: 1
+--- !u!114 &4143279794781408924
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7717354368920738295}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a86f533fd9917dd4da8601e9eb542c96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  LogLevel: 2

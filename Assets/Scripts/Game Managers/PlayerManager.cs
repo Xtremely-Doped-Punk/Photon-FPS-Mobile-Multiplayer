@@ -2,10 +2,11 @@ using Photon.Pun;
 using Photon.Realtime;
 using System;
 using System.Collections.Generic;
+using Task;
 using UnityEngine;
 using Hashtable = ExitGames.Client.Photon.Hashtable; // as there is an ambiguity bet System.Collections.Hastable and Photon.Hastable
 
-namespace Task
+namespace PM_FPS
 {
     public abstract class NetworkObject: MonoBehaviourPunCallbacks
     {

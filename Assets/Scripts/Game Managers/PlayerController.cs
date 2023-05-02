@@ -1,18 +1,18 @@
+using Items;
 using Photon.Pun;
 using Photon.Realtime;
 using Photon.Voice.PUN;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Task;
 using TMPro;
-using Unity.Burst.CompilerServices;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.UI;
 using Hashtable = ExitGames.Client.Photon.Hashtable; // as there is an ambiguity bet System.Collections.Hastable and Photon.Hastable
 
-namespace Task
+namespace PM_FPS
 {
     public interface IDamageable 
     {
@@ -47,7 +47,7 @@ namespace Task
         [SerializeField] private Image _ui_HpDisp;
         [field: SerializeField] public TMP_Text AmmoTxt { get; private set; } = null;
         [field: SerializeField] public Image ReloadImg { get; private set; } = null;
-        [SerializeField] private GunBehaviour[] _gunLoadout;
+        [SerializeField] private Item[] _gunLoadout;
 
         [Header("Player Config")]
         [SerializeField] private int _currentHealth = MAX_PLAYER_HEALTH; // serialized for debug purposes
@@ -55,6 +55,9 @@ namespace Task
         [SerializeField, Range(100, 1000)] private float _jumpForce = 250;
         [SerializeField] private float _sprintBoostSpeed, _walkSpeed;
         [SerializeField, Range(0, 1)] private float _smoothTime = .15f;
+        [Tooltip("scaaling factor affecting player movement speed while in air. " +
+            "Set it to 0 to make the player completely uncontrollable mid-air (or) Set it to 1 to make the player completely controllable mid-air")] 
+        [SerializeField, Range(0, 1)] private float _aerodynamicMovementMultiplier = .8f;
         [Tooltip("enable this to test player controls, which bypasses the player network connectivity")] 
         public bool _InpTest_;
 
@@ -65,7 +68,9 @@ namespace Task
         private float mobilityMultiplier = NO_ITEM_EQUIPPED_MULTIPLIER;
         [HideInInspector] public PlayerManager playerManager;
 
-
+        private readonly float rpcDelay = .5f;
+        private readonly int maxRPCAttempts = 5;
+        private int noOfRPCAttempts;
 
         #region Initializations
         private void Awake()
@@ -75,7 +80,7 @@ namespace Task
             else
             {
                 //GetComponent<PhotonVoiceView>().enabled = true;
-                photonView.RPC(nameof(RPC_InstanciatePlayerMaterial), RpcTarget.AllBuffered);
+                Invoke(nameof(InvokeMaterialPlayerUpdateRPC), rpcDelay);
                 AndroidInputOverlay.SetActive(Application.isMobilePlatform);
             }
         }
@@ -83,8 +88,24 @@ namespace Task
         [PunRPC] private void RPC_InstanciatePlayerMaterial()
         {
             // we are not editing material in prefab, we will edit in its instance again through a rpc callback on all client's end
-            GetComponent<Renderer>().material = NetworkManager.singleton.RuntimePlayerMaterialAssets[photonView.OwnerActorNr];
+            var renderer = GetComponent<Renderer>();
+            if (NetworkManager.singleton.RuntimePlayerMaterialAssets.TryGetValue(photonView.OwnerActorNr, out var mat))
+            {
+                renderer.material = mat;
+                noOfRPCAttempts = 0;
+            }
+            else if (noOfRPCAttempts < maxRPCAttempts)
+            {
+                noOfRPCAttempts++;
+                Debug.Log("Player material not found!, will call rpc again will delay..");
+                Invoke(nameof(InvokeMaterialPlayerUpdateRPC), rpcDelay);
+            }
+            else
+            {
+                Debug.Log("Player material not found!, max no. of fetch attempts done...");
+            }
         }
+        private void InvokeMaterialPlayerUpdateRPC() => photonView.RPC(nameof(RPC_InstanciatePlayerMaterial), RpcTarget.AllBuffered);
 
         private void Start()
         {
@@ -115,7 +136,7 @@ namespace Task
                 FPS_Camera.enabled = false;
             }
 
-            //Cursor.lockState = CursorLockMode.Confined; // make cursor locked by default
+            Cursor.lockState = CursorLockMode.Locked; // make cursor locked by default
         }
 
         private void OnDestroy()
@@ -195,13 +216,14 @@ namespace Task
             }
 
             //var shift = Input.GetKey(KeyCode.LeftShift);
-            var shift = _InputHandler_.Shift_BtnHold;
+            var shift = _InputHandler_.SprintHold;
             if (_InpTest_)
                 Debug.Log("Shift = " + shift);
             var speed = _walkSpeed + (shift ? _sprintBoostSpeed : 0);
 
             // gun equiping mobility comes into play here as a multipler factor
-            speed *= mobilityMultiplier;
+            // aero-dynamic movement multiplier if not grounded;
+            speed *= mobilityMultiplier * (_PlayerGroundCheck.isGrounded ? 1 : _aerodynamicMovementMultiplier);
 
             moveAmount = Vector3.SmoothDamp(moveAmount, moveDir * speed, ref smoothMoveVelocity, _smoothTime); 
             // ref => call by reference parameter, i.e., smoothMoveVelocity is updated in SmoothDamp() itself
@@ -210,7 +232,7 @@ namespace Task
         void TryJumpUpdate(bool _InpTest_ = false)
         {
             //bool space = Input.GetKeyDown(KeyCode.Space);
-            bool space = _InputHandler_.Space_BtnDown;
+            bool space = _InputHandler_.PlayerInput.Jump.WasPerformedThisFrame();
             if (_InpTest_)
                 Debug.Log("Space = " + space);
 
@@ -236,9 +258,9 @@ namespace Task
 
             // Mouse Scroll Inputs
             //var next = (Input.GetAxisRaw("Mouse ScrollWheel") > 0f)
-            var next = (_InputHandler_.Mouse_ScrollWheel > 0f) || _InputHandler_.WeaponNext;
+            var next = (_InputHandler_.Mouse_ScrollWheel > 0f) || _InputHandler_.PlayerInput.WeaponSwitchNext.WasPressedThisFrame();
             //var prev = (Input.GetAxisRaw("Mouse ScrollWheel") < 0f)
-            var prev = (_InputHandler_.Mouse_ScrollWheel < 0f) || _InputHandler_.WeaponPrev;
+            var prev = (_InputHandler_.Mouse_ScrollWheel < 0f) || _InputHandler_.PlayerInput.WeaponSwitchPrev.WasPressedThisFrame();
             if (_InpTest_)
             {
                 Debug.Log("Weapon switch next = " + next);
@@ -332,7 +354,7 @@ namespace Task
             if (_index != -1)
             {
                 _gunLoadout[_index].gameObject.SetActive(true);
-                equippedGunIdx = _index; mobilityMultiplier = _gunLoadout[_index].ConfigInfo.MobilityMultiplier;
+                equippedGunIdx = _index; mobilityMultiplier = _gunLoadout[_index].GetMobiltyMultiplier();
             }
 
             if (!_InpTest_ && photonView.IsMine) // owner if this player, must broadcast his equiped gun, so that it can synced from other player's end

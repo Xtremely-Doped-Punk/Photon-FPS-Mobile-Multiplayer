@@ -3,6 +3,7 @@ using Photon.Realtime;
 using Photon.Pun;
 using UnityEngine;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
+using PM_FPS;
 
 namespace Task
 {

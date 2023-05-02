@@ -1,5 +1,6 @@
 using Photon.Pun;
 using Photon.Realtime;
+using PM_FPS;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
