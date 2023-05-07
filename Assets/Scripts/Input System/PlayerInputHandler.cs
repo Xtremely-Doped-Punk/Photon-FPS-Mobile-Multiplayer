@@ -8,18 +8,19 @@ namespace PM_FPS
 {
     public class PlayerInputHandler : MonoBehaviour
     {
-        // scale values to match up new input system to old input system
-        //#if ENABLE_INPUT_SYSTEM
-        public const float MOUSE_AXIS_SCALER = 10;
+        private const string HORIZONTAL_SENSTIVITY = "HorizontalSenstivity";
+        private const string VERTICAL_SENSTIVITY = "VericalSenstivity";
+        public const float SENS_MIN = 1, SENS_MAX = 100;
 
-        string primaryBinding = "<Touchscreen>/delta";
-        string secondaryBinding = "<Touchscreen>/touch1/delta";
-
-        int Android_CamBindIndex;
-        InputActionSetupExtensions.BindingSyntax Android_Cam_Binding;
+        public event EventHandler OnAutoSprintUnLocked;
 
         // singleton
         public static PlayerInputHandler Instance { get; private set; }
+
+        private const float _lookSenstivityMultiplier = 0.01f;
+        [SerializeField, Range(SENS_MIN, SENS_MAX)] private float lookSenstivityX = 50f;
+        [SerializeField, Range(SENS_MIN, SENS_MAX)] private float lookSenstivityY = 50f;
+
         private void Awake()
         {
             if (Instance == null)
@@ -28,6 +29,9 @@ namespace PM_FPS
             }
             else
                 Destroy(this.gameObject);
+
+            lookSenstivityX = PlayerPrefs.GetFloat(HORIZONTAL_SENSTIVITY, lookSenstivityX);
+            lookSenstivityY = PlayerPrefs.GetFloat(VERTICAL_SENSTIVITY, lookSenstivityY);
         }
 
         /*
@@ -65,8 +69,8 @@ namespace PM_FPS
 
         // public assesables (note BtnDown, BtnUp) => they need to be implemented as events
         // or should be resetted every frame after their use is invoked (thus here they are public set)
-        public float MouseX_Axis => inp_Look.x / MOUSE_AXIS_SCALER;
-        public float MouseY_Axis => inp_Look.y / MOUSE_AXIS_SCALER;
+        public float MouseX_Axis => lookSenstivityX * _lookSenstivityMultiplier * inp_Look.x;
+        public float MouseY_Axis => lookSenstivityY * _lookSenstivityMultiplier * inp_Look.y;
         public float Horizontal_Axis => inp_Move.x;
         public float Vertical_Axis => inp_Move.y;
 
@@ -90,6 +94,24 @@ namespace PM_FPS
         [SerializeField] private Vector2 inp_Move; public float moveDeltaMagnitude => inp_Move.magnitude;
         [SerializeField] private Vector2 inp_Look;
 
+        public void SetMoveInput(Vector2 val)
+        {
+            if (PlayerInput.Move.enabled)
+            {
+                MoveUI_EnterOverride(); // sometimes touch enter not triggered as it might consider it as multiple count
+                //Debug.LogError("PlayerInput:Move from InputActions is not disabled, pls disable it before setting input values directly!");
+            }
+            inp_Move = val;
+        }
+        public void SetLookInput(Vector2 val)
+        {
+            if (PlayerInput.Look.enabled)
+            {
+                CamUI_EnterOverride(); // sometimes touch enter not triggered as it might consider it as multiple count
+                //Debug.LogError("PlayerInput:Look from InputActions is not disabled, pls disable it before setting input values directly!");
+            }
+                inp_Look = val;
+        }
 
         // Work around for button hold technique
         //public bool Shift_BtnHold => actions_Shift.Any(x => x.IsPressed());
@@ -98,6 +120,7 @@ namespace PM_FPS
         // Another work around for reset after reference
         //[SerializeField] private bool inp_Jump = false;
         //public bool Space_BtnDown { get { var temp = inp_Jump; inp_Jump = false; return temp; } } // if accessed, it resets
+
 
         private void OnEnable()
         {
@@ -134,13 +157,6 @@ namespace PM_FPS
 
             _InputActions_.Enable();
             PlayerInput.Enable();
-
-
-            // harcoded for now, later can be made dynamic in rebinding
-            // for now, control scheme: "Android", unter Look action map,
-            // binding "<Touchscreen>/delta" will be switched to 2ndary screen touch when primary touch is controlling on screen stick
-            Android_CamBindIndex = PlayerInput.Look.GetBindingIndex(group: "Android", path: primaryBinding);
-            Android_Cam_Binding = PlayerInput.Look.ChangeBinding(Android_CamBindIndex);
         }
 
         private void HandleMovement(InputAction.CallbackContext InpActCB)
@@ -169,30 +185,66 @@ namespace PM_FPS
 
         public void CamUI_EnterOverride()
         {
-            // previously whenever on-screen stick was held, cam controls was disabled
-            //_PlayerInput_.Look.performed -= HandleCamera; inp_Look = Vector2.zero;
             PlayerInput.Look.Disable();
-            Android_Cam_Binding.WithPath(secondaryBinding);
-            PlayerInput.Look.Enable();
-            //_PlayerInput_.Look.performed += HandleCamera;
+            inp_Look = Vector2.zero;
         }
         public void CamUI_ExitOverride()
         {
-            //_PlayerInput_.Look.performed -= HandleCamera; inp_Look = Vector2.zero;
-            PlayerInput.Look.Disable();
-            Android_Cam_Binding.WithPath(primaryBinding);
+            inp_Look = Vector2.zero;
             PlayerInput.Look.Enable();
-            //_PlayerInput_.Look.performed += HandleCamera;
         }
 
+        public void MoveUI_EnterOverride()
+        {
+            PlayerInput.Move.Disable();
+            inp_Move = Vector2.zero;
+            AutoSprint_GiveOverride();
+        }
+
+        public void MoveUI_ExitOverride(bool reset = true)
+        {
+            if (reset)
+                inp_Move = Vector2.zero;
+            
+            PlayerInput.Move.Enable();
+        }
+
+        private bool failsafeCancelAutoRunAdded = false;
         public void AutoSprint_TakeOverride(Vector2 dir)
         {
-            PlayerInput.Move.performed -= HandleMovement;
+            if (!failsafeCancelAutoRunAdded)
+            {
+                PlayerInput.Move.performed += CancelAutoSprintOnMovePerformed;
+                failsafeCancelAutoRunAdded = true;
+            }
+            // give override when move is enabled
+
             inp_Move = dir.normalized;
+            SprintHold = true;
+            Debug.Log("Sprint Locked");
         }
+
+        private void CancelAutoSprintOnMovePerformed(InputAction.CallbackContext obj)
+        {
+            AutoSprint_GiveOverride();
+            // this event subscription should be made to trigger once per call
+
+            OnAutoSprintUnLocked?.Invoke(this, EventArgs.Empty);
+        }
+
         public void AutoSprint_GiveOverride()
         {
-            PlayerInput.Move.performed += HandleMovement;
+            if (failsafeCancelAutoRunAdded)
+            {
+                PlayerInput.Move.performed -= CancelAutoSprintOnMovePerformed;
+                failsafeCancelAutoRunAdded = false;
+            }
+
+            if (SprintHold)
+            {
+                SprintHold = false;
+                Debug.Log("Sprint Unlocked");
+            }
         }
 
         public void Reset()
@@ -201,6 +253,18 @@ namespace PM_FPS
             inp_Look = Vector2.zero;
             Mouse_ScrollWheel = 0f;
             //Shift_BtnHold = LeftMouse_BtnHold = false;
+        }
+        public float GetLookSenstivityX() => lookSenstivityX;
+        public float GetLookSenstivityY() => lookSenstivityY;
+        public void SetLookSenstivityX(float val)
+        {
+            lookSenstivityX = val;
+            PlayerPrefs.SetFloat(HORIZONTAL_SENSTIVITY, lookSenstivityX);
+        }
+        public void SetLookSenstivityY(float val)
+        {
+            lookSenstivityY = val;
+            PlayerPrefs.SetFloat(VERTICAL_SENSTIVITY, lookSenstivityY);
         }
     }
 }

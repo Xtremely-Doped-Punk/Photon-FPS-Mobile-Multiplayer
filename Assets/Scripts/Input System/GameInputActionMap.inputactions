@@ -216,17 +216,6 @@
                 },
                 {
                     "name": "",
-                    "id": "26ab83a6-15e5-4596-bebd-f392e18996ab",
-                    "path": "<Touchscreen>/delta",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "Android",
-                    "action": "Look",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "989a1aea-d6e0-4f3f-b3f4-5f4239da3aa8",
                     "path": "<Gamepad>/rightStick",
                     "interactions": "",

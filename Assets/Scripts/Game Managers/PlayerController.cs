@@ -51,7 +51,6 @@ namespace PM_FPS
 
         [Header("Player Config")]
         [SerializeField] private int _currentHealth = MAX_PLAYER_HEALTH; // serialized for debug purposes
-        [SerializeField, Range(0, 10)] private float _mouseSensitivity = 3.5f;
         [SerializeField, Range(100, 1000)] private float _jumpForce = 250;
         [SerializeField] private float _sprintBoostSpeed, _walkSpeed;
         [SerializeField, Range(0, 1)] private float _smoothTime = .15f;
@@ -177,7 +176,7 @@ namespace PM_FPS
             var mouseX = _InputHandler_.MouseX_Axis;
             if (_InpTest_)
                 Debug.Log("Mouse X = " + mouseX);
-            transform.Rotate(Vector3.up * mouseX * _mouseSensitivity);
+            transform.Rotate(Vector3.up * mouseX);
 
             // vertical rotation (by camera)
 
@@ -185,7 +184,7 @@ namespace PM_FPS
             var mouseY = _InputHandler_.MouseY_Axis;
             if (_InpTest_)
                 Debug.Log("Mouse Y = " + mouseY);
-            verticalLookRotation += mouseY * _mouseSensitivity;
+            verticalLookRotation += mouseY;
             verticalLookRotation = Mathf.Clamp(verticalLookRotation, -85f, 85f); // clamp value bet top and bottom
             // 90 degree clamp makes to able to be shoot on themselves, i.e., player itself
 

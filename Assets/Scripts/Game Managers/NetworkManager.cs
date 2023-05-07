@@ -40,7 +40,7 @@ namespace PM_FPS
         }
 
         [SerializeField] private bool isConnectedToMaster = false;
-        [SerializeField] private bool isJoinedToRoom = false;
+        //[SerializeField] private bool isJoinedToRoom = false;
         private RoomOptions roomOptions = new RoomOptions();
         TypedLobby lobbyOptions = TypedLobby.Default;
         bool AutoJoinLobby = false;

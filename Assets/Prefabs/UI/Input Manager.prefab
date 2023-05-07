@@ -44,14 +44,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd214a61747bdbf47a1cfa637921851e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  <Shift_BtnHold>k__BackingField: 0
-  <Space_BtnDown>k__BackingField: 0
-  <LeftMouse_BtnHold>k__BackingField: 0
-  <LeftMouseBtn_BtnDown>k__BackingField: 0
-  <R_BtnDown>k__BackingField: 0
-  <WeaponNext>k__BackingField: 0
-  <WeaponPrev>k__BackingField: 0
+  lookSenstivityX: 20
+  lookSenstivityY: 20
   <Mouse_ScrollWheel>k__BackingField: 0
-  <Tab_BtnHold>k__BackingField: 0
+  <SprintHold>k__BackingField: 0
   inp_Move: {x: 0, y: 0}
   inp_Look: {x: 0, y: 0}

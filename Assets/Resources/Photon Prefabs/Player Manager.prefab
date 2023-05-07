@@ -46,7 +46,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   path: Photon Prefabs\Player Manager
-  _PlayerControllerPrefab: {fileID: 8190067119503449696, guid: 40c878b527fac0146a2a68975d98e029,
+  _PlayerControllerPrefab: {fileID: 8105398994330462913, guid: 76ddeb3f3550f6a46bf2ede3b680e8e1,
     type: 3}
 --- !u!114 &5859135445102958203
 MonoBehaviour:
